@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: pastory-api
+Globals:
+  Api:
+    EndpointConfiguration: REGIONAL
+  Function:
+    Timeout: 5
+Resources:
+  DiaryFunction:
+    Properties:
+      CodeUri: s3://pastory-api/0f290e56705e751219bc19faa794032e
+      Environment:
+        Variables:
+          FIREBASE_CREDENTIALS_JSON_PATH: ./credentials/pastory-me-firebase-adminsdk-yynru-b414c8bc0f.json
+      Events:
+        CORS:
+          Properties:
+            Method: OPTIONS
+            Path: /{proxy+}
+          Type: Api
+        CreateDiary:
+          Properties:
+            Method: POST
+            Path: /diaries
+          Type: Api
+        DeleteDiary:
+          Properties:
+            Method: DELETE
+            Path: /diaries/{proxy+}
+          Type: Api
+        FetchDiaries:
+          Properties:
+            Method: GET
+            Path: /diaries
+          Type: Api
+        UpdateDiary:
+          Properties:
+            Method: PUT
+            Path: /diaries/{proxy+}
+          Type: Api
+      Handler: main
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: Diaries
+      Runtime: go1.x
+      Tracing: Active
+    Type: AWS::Serverless::Function
+  DiaryTable:
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: ID
+        AttributeType: S
+      - AttributeName: UserID
+        AttributeType: S
+      - AttributeName: Date
+        AttributeType: S
+      GlobalSecondaryIndexes:
+      - IndexName: UserID-Date-index
+        KeySchema:
+        - AttributeName: UserID
+          KeyType: HASH
+        - AttributeName: Date
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+      KeySchema:
+      - AttributeName: ID
+        KeyType: HASH
+      - AttributeName: UserID
+        KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 1
+      SSESpecification:
+        SSEEnabled: true
+      TableName: Diaries
+    Type: AWS::DynamoDB::Table
+Transform: AWS::Serverless-2016-10-31

@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: pastory-api
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 5
+  Api:
+    EndpointConfiguration: REGIONAL
+
+Resources:
+  DiaryFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: .
+      Handler: main
+      Runtime: go1.x
+      Tracing: Active # https://docs.aws.amazon.com/lambda/latest/dg/lambda-x-ray.html
+      Events:
+        FetchDiaries:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /diaries
+            Method: GET
+        CreateDiary:
+          Type: Api
+          Properties:
+            Path: /diaries
+            Method: POST
+        UpdateDiary:
+          Type: Api
+          Properties:
+            Path: /diaries/{proxy+}
+            Method: PUT
+        DeleteDiary:
+          Type: Api
+          Properties:
+            Path: /diaries/{proxy+}
+            Method: DELETE
+        CORS:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: OPTIONS
+      Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
+        Variables:
+          FIREBASE_CREDENTIALS_JSON_PATH: ./credentials/pastory-me-firebase-adminsdk-yynru-b414c8bc0f.json
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: Diaries
+  DiaryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Diaries
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: ID
+          AttributeType: S
+        - AttributeName: UserID
+          AttributeType: S
+        - AttributeName: Date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ID
+          KeyType: HASH
+        - AttributeName: UserID
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: UserID-Date-index
+          KeySchema:
+            - AttributeName: UserID
+              KeyType: HASH
+            - AttributeName: Date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 1

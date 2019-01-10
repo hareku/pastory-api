@@ -1,0 +1,53 @@
+{
+    "AttributeDefinitions": [
+        {
+            "AttributeName": "ID",
+            "AttributeType": "S"
+        },
+        {
+            "AttributeName": "UserID",
+            "AttributeType": "S"
+        },
+        {
+            "AttributeName": "Date",
+            "AttributeType": "S"
+        }
+    ],
+    "TableName": "Diaries",
+    "KeySchema": [
+        {
+            "AttributeName": "ID",
+            "KeyType": "HASH"
+        },
+        {
+            "AttributeName": "UserID",
+            "KeyType": "RANGE"
+        }
+    ],
+    "GlobalSecondaryIndexes": [
+        {
+            "IndexName": "UserID-Date-index",
+            "KeySchema": [
+                {
+                    "AttributeName": "UserID",
+                    "KeyType": "HASH"
+                },
+                {
+                    "AttributeName": "Date",
+                    "KeyType": "RANGE"
+                }
+            ],
+            "Projection": {
+                "ProjectionType": "ALL"
+            },
+            "ProvisionedThroughput": {
+                "ReadCapacityUnits": 5,
+                "WriteCapacityUnits": 5
+            }
+        }
+    ],
+    "ProvisionedThroughput": {
+        "ReadCapacityUnits": 2,
+        "WriteCapacityUnits": 2
+    }
+}
